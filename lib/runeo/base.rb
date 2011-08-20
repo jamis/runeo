@@ -1,7 +1,7 @@
 require 'net/http'
 require 'uri'
+
 require 'runeo/connection'
-require 'runeo/relationship_proxy'
 
 module Runeo
   class Base

@@ -1,3 +1,5 @@
+require 'runeo/relationship'
+
 module Runeo
   class RelationshipProxy
     attr_reader :anchor

@@ -1,5 +1,7 @@
-require 'runeo/base'
 require 'json'
+
+require 'runeo/base'
+require 'runeo/relationship_proxy'
 
 module Runeo
   class Node < Base
