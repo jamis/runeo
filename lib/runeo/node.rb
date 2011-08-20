@@ -10,7 +10,11 @@ module Runeo
     class <<self
       def find(id)
         response = connection.get("/db/data/node/#{id.to_i}")
-        hash = JSON.parse(response.body)
+        instantiate JSON.parse(response.body)
+      end
+
+      def instantiate(hash)
+        id = extract_id(hash["self"])
         data = hash["data"] || {}
         type = data["_type"] || "Runeo::Node"
         type.constantize.new data.merge("id" => id)
@@ -19,9 +23,7 @@ module Runeo
       def create(attrs={})
         payload = attrs.merge(_type: self.name).to_json
         response = connection.post("/db/data/node", payload, "application/json")
-        hash = JSON.parse(response.body)
-        id = extract_id(hash["self"])
-        new hash["data"].merge("id" => id)
+        instantiate JSON.parse(response.body)
       end
 
       def has_many(association_name, options={})

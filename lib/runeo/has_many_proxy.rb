@@ -1,3 +1,5 @@
+require "runeo/node"
+
 module Runeo
   class HasManyProxy
     include Enumerable
@@ -23,6 +25,24 @@ module Runeo
       @_result.length
     end
 
+    def create(attributes={})
+      raise ArgumentError, "ambiguous #create due to too many :via specs" if @options[:via].length > 1
+      raise ArgumentError, "ambiguous #create due to :all direction" if @options[:via].first[1] == :all
+
+      node_class = (@options[:class] || "Runeo::Node").constantize
+      node = node_class.create(attributes)
+
+      via_type, via_direction = @options[:via].first
+      if via_direction == :in
+        from, to = node, @anchor
+      else
+        from, to = @anchor, node
+      end
+
+      from.relationships.create to, via_type
+      node
+    end
+
     private
 
     def load!
@@ -35,8 +55,7 @@ module Runeo
         response = @anchor.class.connection.post("/db/data/node/#{@anchor.id}/traverse/node", payload.to_json, "application/json")
 
         JSON.parse(response.body).map do |hash|
-          id = @anchor.class.extract_id(hash["self"])
-          (@options[:class] || Runeo::Node).new hash["data"].merge("id" => id)
+          Runeo::Node.instantiate(hash)
         end
       end
     end

@@ -22,15 +22,15 @@ class TestNode < MiniTest::Unit::TestCase
   end
 
   def test_find_should_return_new_node_object_with_given_nodes_properties
-    @http.on :get, "/db/data/node/1", '{"data":{"name":"Jamis"}}'
+    @http.on :get, "/db/data/node/1", '{"self":"/db/data/node/1","data":{"name":"Jamis"}}'
     node = Runeo::Node.find(1)
     assert_equal 1, node.id
     assert_equal "Jamis", node.name
   end
 
   def test_find_should_instantiate_appropriate_node_type
-    @http.on :get, "/db/data/node/1", '{"data":{"name":"Jamis"}}'
-    @http.on :get, "/db/data/node/2", '{"data":{"name":"Jamis","_type":"TestNode::Person"}}'
+    @http.on :get, "/db/data/node/1", '{"self":"/db/data/node/1","data":{"name":"Jamis"}}'
+    @http.on :get, "/db/data/node/2", '{"self":"/db/data/node/2","data":{"name":"Jamis","_type":"TestNode::Person"}}'
     assert_instance_of Runeo::Node, Runeo::Node.find(1)
     assert_instance_of TestNode::Person, Runeo::Node.find(2)
   end

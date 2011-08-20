@@ -1,8 +1,12 @@
 require 'helper'
 require 'runeo/has_many_proxy'
+require 'runeo/node'
 
 class TestHasManyProxy < MiniTest::Unit::TestCase
   include FlexMock::TestCase
+
+  class Person < Runeo::Node
+  end
 
   def setup
     @http = MockHTTP.new
@@ -40,6 +44,21 @@ class TestHasManyProxy < MiniTest::Unit::TestCase
     assert_equal 2, proxy.length
     assert_equal [12, 13], proxy.map(&:id)
     assert_equal [Runeo::Node, Runeo::Node], proxy.map(&:class)
+  end
+  
+  def test_create_should_create_new_node_and_new_relationship
+    expected_node_query = '{"name":"Jamis","_type":"TestHasManyProxy::Person"}'
+    expected_relationship_query = '{"to":"/db/data/node/11","type":"child"}'
+
+    @http.on :post, "/db/data/node with #{expected_node_query}", '{"self":"/db/data/node/12","data":{"name":"Jamis","_type":"TestHasManyProxy::Person"}}'
+    @http.on :post, "/db/data/node/12/relationships with #{expected_relationship_query}", '{"start":"/db/data/node/12","data":{},"type":"child","self":"/db/data/relationship/1","end":"/db/data/node/11"}'
+
+    proxy = Runeo::HasManyProxy.new(Runeo::Node.new("id" => 11), via: { child: :in }, class: "TestHasManyProxy::Person")
+    node = proxy.create("name" => "Jamis")
+
+    assert_equal 12, node.id
+    assert_equal "Jamis", node.name
+    assert_instance_of TestHasManyProxy::Person, node
   end
 
 #  def test_create_should_build_outgoing_relationship_by_default
