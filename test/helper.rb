@@ -2,7 +2,7 @@ require 'minitest/unit'
 require 'flexmock'
 
 class MockHTTP
-  MockResponse = Struct.new(:code, :body)
+  Response = Struct.new(:code, :body)
 
   def initialize
     @map = Hash.new { |h,k| h[k] = {} }
@@ -21,6 +21,6 @@ class MockHTTP
   end
 
   def on(method, key, body, code="200")
-    @map[method][key] = MockResponse.new(code.to_s, body.to_s)
+    @map[method][key] = Response.new(code.to_s, body.to_s)
   end
 end

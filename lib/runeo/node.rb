@@ -1,6 +1,8 @@
 require 'json'
+require 'active_support/core_ext/string'
 
 require 'runeo/base'
+require 'runeo/has_many_proxy'
 require 'runeo/relationship_proxy'
 
 module Runeo
@@ -9,11 +11,13 @@ module Runeo
       def find(id)
         response = connection.get("/db/data/node/#{id.to_i}")
         hash = JSON.parse(response.body)
-        new hash["data"].merge("id" => id)
+        data = hash["data"] || {}
+        type = data["_type"] || "Runeo::Node"
+        type.constantize.new data.merge("id" => id)
       end
 
       def create(attrs={})
-        payload = attrs.to_json
+        payload = attrs.merge(_type: self.name).to_json
         response = connection.post("/db/data/node", payload, "application/json")
         hash = JSON.parse(response.body)
         id = extract_id(hash["self"])
@@ -21,19 +25,9 @@ module Runeo
       end
 
       def has_many(association_name, options={})
-        payload = { max_depth: 1, relationships: [] }
-        options[:via].each do |name, direction|
-          payload[:relationships] << { direction: direction, type: name }
-        end
-
         class_eval <<-CODE, __FILE__, __LINE__+1
           def #{association_name}
-            payload = #{payload.to_json.inspect}
-            response = self.class.connection.post("/db/data/node/\#{id}/traverse/node", payload, "application/json")
-            JSON.parse(response.body).map do |hash|
-              id = self.class.extract_id(hash["self"])
-              #{options[:class] || "Runeo::Node"}.new hash["data"].merge("id" => id)
-            end
+            @_#{association_name} ||= Runeo::HasManyProxy.new(self, #{options.inspect})
           end
         CODE
       end

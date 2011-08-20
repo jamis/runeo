@@ -28,11 +28,19 @@ class TestNode < MiniTest::Unit::TestCase
     assert_equal "Jamis", node.name
   end
 
+  def test_find_should_instantiate_appropriate_node_type
+    @http.on :get, "/db/data/node/1", '{"data":{"name":"Jamis"}}'
+    @http.on :get, "/db/data/node/2", '{"data":{"name":"Jamis","_type":"TestNode::Person"}}'
+    assert_instance_of Runeo::Node, Runeo::Node.find(1)
+    assert_instance_of TestNode::Person, Runeo::Node.find(2)
+  end
+
   def test_create_should_insert_new_node_and_return_corresponding_object
-    @http.on :post, "/db/data/node with {\"name\":\"Jamis\"}", '{"self":"http://localhost:7474/db/data/node/15", "data":{"name":"Jamis"}}', "201"
+    @http.on :post, "/db/data/node with {\"name\":\"Jamis\",\"_type\":\"Runeo::Node\"}", '{"self":"http://localhost:7474/db/data/node/15", "data":{"name":"Jamis","_type":"Runeo::Node"}}', "201"
     node = Runeo::Node.create name: "Jamis"
     assert_equal 15, node.id
     assert_equal "Jamis", node.name
+    assert_equal "Runeo::Node", node._type
   end
 
   def test_destroy_should_destroy_the_current_node_object
@@ -52,13 +60,8 @@ class TestNode < MiniTest::Unit::TestCase
     assert Union.new.respond_to?(:children), "expected Union to respond to :children"
   end
 
-  def test_has_many_should_emit_query_to_return_all_immediate_neighbors_via_the_given_relationship
-    expected_query = '{"max_depth":1,"relationships":[{"direction":"in","type":"child"}]}'
-    @http.on :post, "/db/data/node/1/traverse/node with #{expected_query}", '[{"data":{"date":"1997-07-11"},"self":"/db/data/node/12"},{"data":{"date":"1985-03-08"},"self":"/db/data/node/13"}]'
+  def test_has_many_should_create_helper_that_returns_a_proxy
     parents = Person.new("id" => 1).parents
-    assert_equal 2, parents.length
-    assert parents.all? { |p| p.instance_of?(Union) }
-    assert_equal %w(1997-07-11 1985-03-08), parents.map(&:date)
-    assert_equal [12, 13], parents.map(&:id)
+    assert_instance_of Runeo::HasManyProxy, parents
   end
 end
