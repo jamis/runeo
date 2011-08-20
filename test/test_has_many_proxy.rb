@@ -61,14 +61,17 @@ class TestHasManyProxy < MiniTest::Unit::TestCase
     assert_instance_of TestHasManyProxy::Person, node
   end
 
-#  def test_create_should_build_outgoing_relationship_by_default
-#    @http.on :post, '/db/data/node/123/relationships with {"to":"/db/data/node/125","type":"SPOUSE"}',
-#      '{"start":"/db/data/node/123","data":{},"type":"SPOUSE","self":"/db/data/relationship/1","end":"/db/data/node/125"}'
-#    proxy = Runeo::RelationshipProxy.new(flexmock("node", :id => 123))
-#    relationship = proxy.create(flexmock("node", :id => 125), "SPOUSE")
-#    assert_equal 1, relationship.id
-#    assert_equal 123, relationship.start_node_id
-#    assert_equal 125, relationship.end_node_id
-#    assert_equal "SPOUSE", relationship.type
-#  end
+  def test_push_should_add_existing_node_with_new_relationship
+    expected_relationship_query = '{"to":"/db/data/node/11","type":"child"}'
+
+    @http.on :post, "/db/data/node/12/relationships with #{expected_relationship_query}", '{"start":"/db/data/node/12","data":{},"type":"child","self":"/db/data/relationship/1","end":"/db/data/node/11"}'
+
+    node1 = Runeo::Node.new("id" => 11)
+    node2 = Runeo::Node.new("id" => 12)
+
+    proxy = Runeo::HasManyProxy.new(node1, via: { child: :in }, class: "TestHasManyProxy::Person")
+    node3 = proxy.push(node2)
+
+    assert_equal node2.object_id, node3.object_id
+  end
 end

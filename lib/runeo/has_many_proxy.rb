@@ -26,11 +26,13 @@ module Runeo
     end
 
     def create(attributes={})
-      raise ArgumentError, "ambiguous #create due to too many :via specs" if @options[:via].length > 1
-      raise ArgumentError, "ambiguous #create due to :all direction" if @options[:via].first[1] == :all
-
+      check_via_conditions!
       node_class = (@options[:class] || "Runeo::Node").constantize
-      node = node_class.create(attributes)
+      push(node_class.create(attributes))
+    end
+
+    def push(node)
+      check_via_conditions!
 
       via_type, via_direction = @options[:via].first
       if via_direction == :in
@@ -44,6 +46,11 @@ module Runeo
     end
 
     private
+
+    def check_via_conditions!
+      raise ArgumentError, "ambiguous #create due to too many :via specs" if @options[:via].length > 1
+      raise ArgumentError, "ambiguous #create due to :all direction" if @options[:via].first[1] == :all
+    end
 
     def load!
       @_result ||= begin
