@@ -6,6 +6,7 @@ class TestNode < MiniTest::Unit::TestCase
 
   class Person < Runeo::Node
     has_many :parents, via: { child: :in }, class: "TestNode::Union"
+    has_one  :fingerprint, via: { id: :out }
   end
 
   class Union < Runeo::Node
@@ -63,5 +64,21 @@ class TestNode < MiniTest::Unit::TestCase
   def test_has_many_should_create_helper_that_returns_a_proxy
     parents = Person.new("id" => 1).parents
     assert_instance_of Runeo::HasManyProxy, parents
+  end
+
+  def test_has_one_should_create_helper_that_performs_traversal_and_returns_first_match
+    expected_query = '{"max_depth":1,"relationships":[{"direction":"out","type":"id"}]}'
+    @http.on :post, "/db/data/node/1234/traverse/node with #{expected_query}", '[{"data":{"pattern":"whorl"},"self":"/db/data/node/12"},{"data":{"pattern":"arch"},"self":"/db/data/node/13"}]'
+    fingerprint = Person.new("id" => 1234).fingerprint
+    assert_equal "whorl", fingerprint.pattern
+  end
+
+  def test_has_one_should_create_writer_that_creates_relationship
+    expected_relationship_query = '{"to":"/db/data/node/2345","type":"id"}'
+
+    @http.on :post, "/db/data/node/1234/relationships with #{expected_relationship_query}", '{"start":"/db/data/node/1234","data":{},"type":"id","self":"/db/data/relationship/1","end":"/db/data/node/2345"}'
+
+    Person.new("id" => 1234).fingerprint = Person.new("id" => 2345)
+    assert_equal @http.requests[:post], 1
   end
 end

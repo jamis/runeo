@@ -33,6 +33,19 @@ module Runeo
           end
         CODE
       end
+
+      def has_one(association_name, options={})
+        class_eval <<-CODE, __FILE__, __LINE__+1
+          def #{association_name}
+            @_#{association_name} ||= Runeo::HasManyProxy.new(self, #{options.inspect}).to_a.first
+          end
+
+          def #{association_name}=(node)
+            Runeo::HasManyProxy.new(self, #{options.inspect}).push(node)
+            node
+          end
+        CODE
+      end
     end
 
     def destroy
