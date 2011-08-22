@@ -25,6 +25,11 @@ module Runeo
       @_result.length
     end
 
+    def [](index)
+      load!
+      @_result[index]
+    end
+
     def create(attributes={})
       check_via_conditions!
       node_class = (@options[:class] || "Runeo::Node").constantize
@@ -48,8 +53,8 @@ module Runeo
     private
 
     def check_via_conditions!
-      raise ArgumentError, "ambiguous #create due to too many :via specs" if @options[:via].length > 1
-      raise ArgumentError, "ambiguous #create due to :all direction" if @options[:via].first[1] == :all
+      raise ArgumentError, "ambiguous due to too many :via specs" if @options[:via].length > 1
+      raise ArgumentError, "ambiguous due to :all direction" if @options[:via].first[1] == :all
     end
 
     def load!
