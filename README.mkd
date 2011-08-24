@@ -1,0 +1,62 @@
+Runeo
+=====
+
+Runeo is a wrapper for Neo4j's REST API, providing an ActiveRecord-like
+interface for Neo4j's functionality.
+
+Usage
+-----
+
+First, you need to tell Runeo where the Neo4j instance is running:
+
+    Runeo::Base.url = "http://localhost:7474"
+
+Then, you can use Runeo simply by instantiating Runeo::Node:
+
+    bob = Runeo::Node.create name: "Bob", age: 25
+    jim = Runeo::Node.create name: "Jim", age: 26
+    bob.relationships.create jim, "friend"
+
+However, it is often more convenient to subclass Runeo::Node:
+
+    class Person < Runeo::Node
+    end
+
+    friend = Person.create name: "Bob", age: 25
+
+Subclasses of Runeo::Node have access to special macros that allow more
+convenient creation and querying of related nodes:
+
+    class Person < Runeo::Node
+      has_many :friends, via: { friend: :out }, class: "Person"
+      has_many :referrals, via: { referrer: in }, class: "Person"
+      has_one  :referrer, via: { referrer: out }
+    end
+
+    bob = Person.create name: "Bob", age: 25
+    jim = bob.friends.create name: "Jim", age: 26
+    jim.referrer = bob
+
+Lastly, you can do a traversal query via the `Runeo::Node#query` method:
+
+    influence = bob.query max_depth: 4, relationships: { friend: :out }
+
+By omitting the `relationships` key, you can traverse all relationships from
+all connected nodes, to the given depth. If you omit `max_depth`, it defaults
+to `1`.
+
+Status
+------
+
+This project is far from complete. I am unlikely to continue work on it, since
+Neo4j's REST API turned out to be insufficient for what I was attempting to use
+it for. If you find Runeo interesting and/or useful, feel free to fork it and
+build on it.
+
+License
+-------
+
+Runeo is hereby submitted into the Public Domain by its author, Jamis Buck
+(jamis@jamisbuck.org). You may use it for whatever purposes you wish.
+
+Please prefer good over evil.
