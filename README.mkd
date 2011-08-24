@@ -4,6 +4,11 @@ Runeo
 Runeo is a wrapper for Neo4j's REST API, providing an ActiveRecord-like
 interface for Neo4j's functionality.
 
+Requirements
+------------
+
+Runeo requires Ruby 1.9.
+
 Usage
 -----
 
