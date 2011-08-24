@@ -7,7 +7,7 @@ interface for Neo4j's functionality.
 Requirements
 ------------
 
-Runeo requires Ruby 1.9.
+Runeo requires Ruby 1.9, and ActiveSupport.
 
 Usage
 -----
